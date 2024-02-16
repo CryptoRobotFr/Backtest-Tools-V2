@@ -201,6 +201,50 @@ def heikinAshiDf(df):
     df['HA_Low'] = df[['HA_Open', 'HA_Close', 'low']].min(axis=1)
     return df
 
+class SmoothedHeikinAshi():
+    def __init__(self, open, high, low, close, smooth1=5, smooth2=3):
+        self.open = open.copy()
+        self.high = high.copy()
+        self.low = low.copy()
+        self.close = close.copy()
+        self.smooth1 = smooth1
+        self.smooth2 = smooth2
+        self._run()
+
+    def _calculate_ha_open(self):
+        ha_open = pd.Series(np.nan, index=self.open.index)
+        start = 0
+        for i in range(1, len(ha_open)):
+            if np.isnan(self.smooth_open.iloc[i]):
+                continue
+            else:
+                ha_open.iloc[i] = (self.smooth_open.iloc[i] + self.smooth_close.iloc[i]) / 2
+                start = i
+                break
+
+        for i in range(start + 1, len(ha_open)):
+            ha_open.iloc[i] = (ha_open.iloc[i-1] + self.ha_close.iloc[i-1]) / 2
+
+        return ha_open
+
+    def _run(self):
+        self.smooth_open = ta.trend.ema_indicator(self.open, self.smooth1)
+        self.smooth_high = ta.trend.ema_indicator(self.high, self.smooth1)
+        self.smooth_low = ta.trend.ema_indicator(self.low, self.smooth1)
+        self.smooth_close = ta.trend.ema_indicator(self.close, self.smooth1)
+
+        self.ha_close = (self.smooth_open + self.smooth_high + self.smooth_low + self.smooth_close) / 4
+        self.ha_open = self._calculate_ha_open()
+        
+
+        self.smooth_ha_close = ta.trend.ema_indicator(self.ha_close, self.smooth2)
+        self.smooth_ha_open = ta.trend.ema_indicator(self.ha_open, self.smooth2)
+    
+    def smoothed_ha_close(self):
+        return self.smooth_ha_close
+    def smoothed_ha_open(self):
+        return self.smooth_ha_open
+
 
 def volume_anomality(df, volume_window=10):
     dfInd = df.copy()

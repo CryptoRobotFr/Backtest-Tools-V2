@@ -177,68 +177,72 @@ class ExchangeDataManager:
             end_timestamp = int(last_dt.timestamp() * 1000)
 
             for coin in coins:
-                if self.exchange_name == "bitget" and ":" not in coin:
-                    print(f"Skip {coin} - Can not download spot data on {self.exchange_name}, use futures with 'XXX/USDT:USDT' format")
-                    continue
-                print(
-                    f"\tRécupération pour la paire {coin} en timeframe {interval} sur l'exchange {self.exchange_name}...")
+                try:
+                    if self.exchange_name == "bitget" and ":" not in coin:
+                        print(f"Skip {coin} - Can not download spot data on {self.exchange_name}, use futures with 'XXX/USDT:USDT' format")
+                        continue
+                    print(
+                        f"\tRécupération pour la paire {coin} en timeframe {interval} sur l'exchange {self.exchange_name}...")
 
-                file_path = f"{self.path_data}/{interval}/"
-                os.makedirs(file_path, exist_ok=True)
-                file_name = f"{file_path}{coin.replace('/', '-').replace(':', '-')}.csv"
+                    file_path = f"{self.path_data}/{interval}/"
+                    os.makedirs(file_path, exist_ok=True)
+                    file_name = f"{file_path}{coin.replace('/', '-').replace(':', '-')}.csv"
 
-                dt_or_false = await self.is_data_missing(file_name, last_dt)
-                if dt_or_false:
+                    dt_or_false = await self.is_data_missing(file_name, last_dt)
+                    if dt_or_false:
 
-                    # print("\tTéléchargement des données")
+                        # print("\tTéléchargement des données")
 
-                    tasks = []
-                    current_timestamp = int(dt_or_false.timestamp() * 1000)
+                        tasks = []
+                        current_timestamp = int(dt_or_false.timestamp() * 1000)
 
-                    while True:
-                        # tasks.append(asyncio.create_task(self.download_tf(
-                        #     coin, interval, current_timestamp)))
-                        tasks.append(self.download_tf_with_semaphore(coin, interval, current_timestamp, sem))
-                        current_timestamp = min([current_timestamp + self.exchange_dict["limit_size_request"] *
-                                                 self.intervals_dict[interval]["interval_ms"], end_timestamp])
-                        if current_timestamp >= end_timestamp:
-                            break
-                    
-                    
-                    self.pbar = tqdm(tasks)
-                    results = await asyncio.gather(*tasks)
-                    await self.exchange.close()
-                    self.pbar.close()
+                        while True:
+                            # tasks.append(asyncio.create_task(self.download_tf(
+                            #     coin, interval, current_timestamp)))
+                            tasks.append(self.download_tf_with_semaphore(coin, interval, current_timestamp, sem))
+                            current_timestamp = min([current_timestamp + self.exchange_dict["limit_size_request"] *
+                                                    self.intervals_dict[interval]["interval_ms"], end_timestamp])
+                            if current_timestamp >= end_timestamp:
+                                break
+                        
+                        
+                        self.pbar = tqdm(tasks)
+                        results = await asyncio.gather(*tasks)
+                        await self.exchange.close()
+                        self.pbar.close()
 
-                    all_df = []
-                    for i in results:
-                        # Si on n'a aucune donnée on ne fait rien
-                        if i:
-                            all_df.append(pd.DataFrame(i))
+                        all_df = []
+                        for i in results:
+                            # Si on n'a aucune donnée on ne fait rien
+                            if i:
+                                all_df.append(pd.DataFrame(i))
 
-                    # Si il y a des données
-                    if all_df:
-                        final = pd.concat(all_df, ignore_index=True, sort=False)
-                        final.columns = ['date', 'open',
-                                         'high', 'low', 'close', 'volume']
-                        final.rename(
-                            columns={0: 'date', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'volume'})
-                        final.set_index('date', drop=False, inplace=True)
-                        final = final[~final.index.duplicated(keep='first')]
-                        if os.path.exists(file_name):
-                            with open(file_name, mode='a') as f:
-                                final.iloc[1:].to_csv(
-                                    path_or_buf=f, header=False, index=False)
+                        # Si il y a des données
+                        if all_df:
+                            final = pd.concat(all_df, ignore_index=True, sort=False)
+                            final.columns = ['date', 'open',
+                                            'high', 'low', 'close', 'volume']
+                            final.rename(
+                                columns={0: 'date', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'volume'})
+                            final.set_index('date', drop=False, inplace=True)
+                            final = final[~final.index.duplicated(keep='first')]
+                            if os.path.exists(file_name):
+                                with open(file_name, mode='a') as f:
+                                    final.iloc[1:].to_csv(
+                                        path_or_buf=f, header=False, index=False)
+                            else:
+                                with open(file_name, mode='w') as f:
+                                    final.to_csv(path_or_buf=f, index=False)
                         else:
-                            with open(file_name, mode='w') as f:
-                                final.to_csv(path_or_buf=f, index=False)
+                            print(
+                                f"\tPas de données pour {coin} en {interval} sur cette période")
                     else:
-                        print(
-                            f"\tPas de données pour {coin} en {interval} sur cette période")
-                else:
-                    print("\tDonnées déjà récupérées")
-                    
-                print("\033[H\033[J", end="")
+                        print("\tDonnées déjà récupérées")
+                        
+                    print("\033[H\033[J", end="")
+                except Exception as e:
+                    print(f"Error during download {coin} {interval} {e}")
+                    continue
 
     async def download_tf_with_semaphore(self, coin, interval, current_timestamp, sem: Semaphore):
         async with sem:

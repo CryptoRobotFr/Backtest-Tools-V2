@@ -1,4 +1,7 @@
+# Custom
 database/
+trades.xlsx
+~$trades.xlsx
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
