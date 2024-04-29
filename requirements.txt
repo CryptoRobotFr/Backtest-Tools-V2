@@ -11,3 +11,5 @@ ipykernel
 lightweight_charts==1.0.18.8
 nbstripout
 openpyxl
+aiolimiter
+httpx
