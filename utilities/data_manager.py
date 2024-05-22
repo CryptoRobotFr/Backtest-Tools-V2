@@ -355,3 +355,37 @@ class ExchangeDataManager:
 
 class TooManyError(Exception):
     pass
+
+def volume_based_resampling(df, number_of_candle, normalize=False):
+
+    if normalize:
+        df['sum_volume'] = df['volume'] * df['close']
+    else:
+        df['sum_volume'] = df['volume']
+
+    volume_per_candle = df['sum_volume'].sum() / number_of_candle
+    # Cumuler le volume
+    df['cum_volume'] = df['sum_volume'].cumsum()
+    
+    # Définir un groupe pour chaque nouveau volume cible
+    df['group'] = (df['cum_volume'] // volume_per_candle).astype(int)
+    
+    # Extraire les dates de début pour chaque groupe
+    start_dates = df.groupby('group').apply(lambda x: x.index[0])
+    
+    # Grouper par le groupe et calculer les OHLC pour chaque groupe
+    resampled_df = df.groupby('group').agg({
+        'open': 'first',
+        'high': 'max',
+        'low': 'min',
+        'close': 'last',
+        'volume': 'sum'
+    })
+    
+    # Ajouter les dates de début comme index
+    resampled_df.index = start_dates.values
+    
+    # Supprimer les colonnes temporaires
+    df.drop(['cum_volume', 'group'], axis=1, inplace=True)
+    
+    return resampled_df
