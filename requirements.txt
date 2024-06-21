@@ -13,3 +13,5 @@ nbstripout
 openpyxl
 aiolimiter
 httpx
+yfinance
+riskfolio-lib
