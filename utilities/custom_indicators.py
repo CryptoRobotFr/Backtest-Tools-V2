@@ -50,63 +50,52 @@ class Trix():
 
         Args:
             close(pd.Series): dataframe 'close' columns,
-            trixLength(int): the window length for each mooving average of the trix,
-            trixSignal(int): the window length for the signal line
+            trix_length(int): the window length for each mooving average of the trix,
+            trix_signal_length(int): the window length for the signal line
     """
 
     def __init__(
         self,
         close: pd.Series,
-        trixLength: int = 9,
-        trixSignal: int = 21
+        trix_length: int = 9,
+        trix_signal_length: int = 21,
+        trix_signal_type: str = "sma" # or ema
     ):
         self.close = close
-        self.trixLength = trixLength
-        self.trixSignal = trixSignal
+        self.trix_length = trix_length
+        self.trix_signal_length = trix_signal_length
+        self.trix_signal_type = trix_signal_type
         self._run()
 
     def _run(self):
-        self.trixLine = ta.trend.ema_indicator(
+        self.trix_line = ta.trend.ema_indicator(
             ta.trend.ema_indicator(
                 ta.trend.ema_indicator(
-                    close=self.close, window=self.trixLength),
-                window=self.trixLength), window=self.trixLength)
-        self.trixPctLine = self.trixLine.pct_change()*100
-        self.trixSignalLine = ta.trend.sma_indicator(
-            close=self.trixPctLine, window=self.trixSignal)
-        self.trixHisto = self.trixPctLine - self.trixSignalLine
+                    close=self.close, window=self.trix_length),
+                window=self.trix_length), window=self.trix_length)
+        
+        self.trix_pct_line = self.trix_line.pct_change()*100
 
-    def trix_line(self) -> pd.Series:
-        """ trix line
+        if self.trix_signal_type == "sma":
+            self.trix_signal_line = ta.trend.sma_indicator(
+                close=self.trix_pct_line, window=self.trix_signal_length)
+        elif self.trix_signal_type == "ema":
+            self.trix_signal_line = ta.trend.ema_indicator(
+                close=self.trix_pct_line, window=self.trix_signal_length)
+            
+        self.trix_histo = self.trix_pct_line - self.trix_signal_line
 
-            Returns:
-                pd.Series: trix line
-        """
-        return pd.Series(self.trixLine, name="TRIX_LINE")
+    def get_trix_line(self) -> pd.Series:
+        return pd.Series(self.trix_line, name="trix_line")
 
-    def trix_pct_line(self) -> pd.Series:
-        """ trix percentage line
+    def get_trix_pct_line(self) -> pd.Series:
+        return pd.Series(self.trix_pct_line, name="trix_pct_line")
 
-            Returns:
-                pd.Series: trix percentage line
-        """
-        return pd.Series(self.trixPctLine, name="TRIX_PCT_LINE")
+    def get_trix_signal_line(self) -> pd.Series:
+        return pd.Series(self.trix_signal_line, name="trix_signal_line")
 
-    def trix_signal_line(self) -> pd.Series:
-        """ trix signal line
-
-            Returns:
-                pd.Series: trix siganl line
-        """
-        return pd.Series(self.trixSignal, name="TRIX_SIGNAL_LINE")
-
-    def trix_histo(self) -> pd.Series:
-        """ trix histogram
-
-            Returns:
-                pd.Series: trix histogram
-        """
-        return pd.Series(self.trixHisto, name="TRIX_HISTO")
+    def get_trix_histo(self) -> pd.Series:
+        return pd.Series(self.trix_histo, name="trix_histo")
 
 
 class VMC():

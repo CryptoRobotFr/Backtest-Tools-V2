@@ -43,7 +43,11 @@ class ExchangeDataManager:
         "bybit": {
             "ccxt_object": ccxt.bybit(config={'enableRateLimit': True}),
             "limit_size_request": 1000
-        }
+        },
+        "bitmart": {
+            "ccxt_object": ccxt.bitmart(config={'enableRateLimit': True}),
+            "limit_size_request": 1000
+        },
     }
 
     # Liste des intervalles à supporter
