@@ -16,3 +16,5 @@ httpx
 yfinance
 riskfolio-lib
 pydantic
+pygwalker
+plotly
