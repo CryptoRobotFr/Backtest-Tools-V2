@@ -251,6 +251,7 @@ def backtest_analysis(
     long_short_info=False,
     entry_exit_info=False,
     pair_info=False,
+    pair_exposition_info=False,
     exposition_info=False,
     indepedant_trade=True
 ):
@@ -480,14 +481,43 @@ def backtest_analysis(
         print('-' * 95)
         for pair in df_trades["pair"].unique():
             df_pair = df_trades.loc[df_trades["pair"] == pair]
-            pair_total_trades = len(df_pair)
-            pair_good_trades = len(df_pair.loc[df_pair["trade_result"] > 0])
-            pair_worst_trade = str(round(df_pair["trade_result_pct"].min() * 100, 2))+' %'
-            pair_best_trade = str(round(df_pair["trade_result_pct"].max() * 100, 2))+' %'
-            pair_win_rate = str(round((pair_good_trades / pair_total_trades) * 100, 2))+' %'
-            pair_sum_result = str(round(df_pair["trade_result_pct"].sum() * 100, 2))+' %'
-            pair_avg_result = str(round(df_pair["trade_result_pct"].mean() * 100, 2))+' %'
-            print('{:<6d}{:>10s}{:>15s}{:>15s}{:>15s}{:>15s}{:>15s}'.format(
+            if pair_exposition_info:
+                # Affichage des trades LONG
+                df_pair_long = df_pair.loc[df_pair["position"] == "LONG"]
+                if not df_pair_long.empty:
+                    pair_total_trades = len(df_pair_long)
+                    pair_good_trades = len(df_pair_long.loc[df_pair_long["trade_result"] > 0])
+                    pair_worst_trade = str(round(df_pair_long["trade_result_pct"].min() * 100, 2))+' %'
+                    pair_best_trade = str(round(df_pair_long["trade_result_pct"].max() * 100, 2))+' %'
+                    pair_win_rate = str(round((pair_good_trades / pair_total_trades) * 100, 2))+' %'
+                    pair_sum_result = str(round(df_pair_long["trade_result_pct"].sum() * 100, 2))+' %'
+                    pair_avg_result = str(round(df_pair_long["trade_result_pct"].mean() * 100, 2))+' %'
+                    print('{:<6d}{:>10s}{:>15s}{:>15s}{:>15s}{:>15s}{:>15s}'.format(
+                                    pair_total_trades,pair+"-LONG",pair_sum_result,pair_avg_result,pair_worst_trade,pair_best_trade,pair_win_rate
+                                ))
+                
+                # Affichage des trades SHORT
+                df_pair_short = df_pair.loc[df_pair["position"] == "SHORT"]
+                if not df_pair_short.empty:
+                    pair_total_trades = len(df_pair_short)
+                    pair_good_trades = len(df_pair_short.loc[df_pair_short["trade_result"] > 0])
+                    pair_worst_trade = str(round(df_pair_short["trade_result_pct"].min() * 100, 2))+' %'
+                    pair_best_trade = str(round(df_pair_short["trade_result_pct"].max() * 100, 2))+' %'
+                    pair_win_rate = str(round((pair_good_trades / pair_total_trades) * 100, 2))+' %'
+                    pair_sum_result = str(round(df_pair_short["trade_result_pct"].sum() * 100, 2))+' %'
+                    pair_avg_result = str(round(df_pair_short["trade_result_pct"].mean() * 100, 2))+' %'
+                    print('{:<6d}{:>10s}{:>15s}{:>15s}{:>15s}{:>15s}{:>15s}'.format(
+                                    pair_total_trades,pair+"-SHORT",pair_sum_result,pair_avg_result,pair_worst_trade,pair_best_trade,pair_win_rate
+                                ))
+            else:
+                pair_total_trades = len(df_pair)
+                pair_good_trades = len(df_pair.loc[df_pair["trade_result"] > 0])
+                pair_worst_trade = str(round(df_pair["trade_result_pct"].min() * 100, 2))+' %'
+                pair_best_trade = str(round(df_pair["trade_result_pct"].max() * 100, 2))+' %'
+                pair_win_rate = str(round((pair_good_trades / pair_total_trades) * 100, 2))+' %'
+                pair_sum_result = str(round(df_pair["trade_result_pct"].sum() * 100, 2))+' %'
+                pair_avg_result = str(round(df_pair["trade_result_pct"].mean() * 100, 2))+' %'
+                print('{:<6d}{:>10s}{:>15s}{:>15s}{:>15s}{:>15s}{:>15s}'.format(
                                 pair_total_trades,pair,pair_sum_result,pair_avg_result,pair_worst_trade,pair_best_trade,pair_win_rate
                             ))
 
